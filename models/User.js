@@ -1,10 +1,16 @@
 // Sequelize documents for model configuration 
 // https://sequelize.org/v5/manual/models-definition.html#configuration
+const bcrypt = require( 'bcrypt' );
 const { Model, DataTypes } = require( 'sequelize' );
 const sequelize = require( '../config/connection' );
 
 // create our User model
-class User extends Model { }
+class User extends Model { 
+    async checkPassword(loginPw){
+        let match = await bcrypt.compare(loginPw, this.password);
+        return match
+    }
+ }
 
 // define table columns and configuration
 User.init(
@@ -37,6 +43,23 @@ User.init(
         },
     },
     {
+        hooks: {
+            // using promises
+            // beforeCreate( userData ) {
+            //     bcrypt.hash( userData.password, 10 ).then( newUserData => {
+            //         return newUserData;
+            //     } );
+            // },
+            // using new async / await 
+            async beforeCreate( newUserData ) {
+                newUserData.password = await bcrypt.hash( newUserData.password, 10 );
+                return newUserData;
+            },
+            async beforeUpdate( updatedUserData ) {
+                updatedUserData.password = await bcrypt.hash( updatedUserData.password, 10 );
+                return updatedUserData;
+            }
+        },
         // TABLE Configuration
         sequelize,
         timestamps: false,

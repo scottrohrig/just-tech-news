@@ -48,9 +48,37 @@ router.post( '/', ( req, res ) => {
 
 } );
 
+router.post( '/login', ( req, res ) => {
+    User.findOne( {
+        where: {
+            email: req.body.email
+        }
+    } ).then( dbUserData => {
+        if ( !dbUserData ) {
+            res.status( 500 ).json( { message: 'No user with that email address!' } );
+            return;
+        }
+
+        // res.json( { user: dbUserData } );
+
+        // verify user
+        dbUserData.checkPassword( req.body.password
+        ).then( match => {
+            if ( !match ) {
+                res.status( 400 ).json( { message: 'Incorrect password!' } );
+                return;
+            }
+            res.json( { user: dbUserData, message: 'You are now logged in!' } );
+
+        } );
+
+    } );
+} )
+
 // PUT /api/users/1
 router.put( '/:id', ( req, res ) => {
     User.update( req.body, {
+        individualHooks: true,
         where: {
             id: req.params.id
         }
