@@ -5,6 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "watch": "nodemon server.js",
+    "seed": "mysql -u root -p < db/seeds.sql",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,9 +20,13 @@
   },
   "homepage": "https://github.com/scottrohrig/just-tech-news#readme",
   "dependencies": {
-    "dotenv": "^14.3.2",
+    "bcrypt": "^5.0.1",
     "express": "^4.17.2",
     "mysql2": "^2.3.3",
     "sequelize": "^6.14.1"
+  },
+  "devDependencies": {
+    "dotenv": "^14.3.2",
+    "nodemon": "^2.0.15"
   }
 }
