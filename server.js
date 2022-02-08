@@ -2,17 +2,29 @@
 const path = require( "path" );
 const express = require( "express" );
 const exphbs = require( "express-handlebars" );
+const session = require( 'express-session' )
 
 // app modules
 const routes = require( "./controllers" );
 const sequelize = require( "./config/connection" );
+const SequilizeStore = require( 'connect-session-sequelize' )( session.Store )
 
 // setup app properties
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // create a session
+const sess = {
+    secret: process.env.SESS_SECRET,
+    cookie: {},
+    resave: false,
+    saveUninitialized: true,
+    store: new SequilizeStore( {
+        db: sequelize
+    } )
+}
 // use the session
+app.use( session( sess ) )
 
 // setup handlebars configuration
 const hbs = exphbs.create( {} );
