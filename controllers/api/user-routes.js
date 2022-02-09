@@ -1,47 +1,47 @@
 const router = require( 'express' ).Router();
 // import User Model
 const { User, Post, Vote, Comment } = require( '../../models' );
+const { catchErrors } = require( '../../utils/helpers' )
 
 // GET /api/users
 router.get( '/', ( req, res ) => {
-    User.findAll( {
-        attributes: { exclude: [ 'password' ] }
-    } )
+    User
+        .findAll( {
+            attributes: { exclude: [ 'password' ] }
+        } )
         .then( ( userData ) => res.json( userData ) )
-        .catch( err => {
-            console.log( err );
-            res.status( 500 ).json( err );
-        } );
+        .catch( err => catchErrors( err, res ) );
 } );
 
 // GET /api/users/1
 router.get( '/:id', ( req, res ) => {
-    User.findOne( {
-        attributes: { exclude: [ 'password' ] },
-        where: {
-            id: req.params.id
-        },
-        include: [
-            {
-                model: Post,
-                attributes: [ 'id', 'title', 'post_url', ]
+    User
+        .findOne( {
+            attributes: { exclude: [ 'password' ] },
+            where: {
+                id: req.params.id
             },
-            {
-                model: Comment,
-                attributes: [ 'id', 'comment_text', 'created_at' ],
-                include: {
-                    model: User,
-                    attributes: [ 'username' ]
+            include: [
+                {
+                    model: Post,
+                    attributes: [ 'id', 'title', 'post_url', ]
+                },
+                {
+                    model: Comment,
+                    attributes: [ 'id', 'comment_text', 'created_at' ],
+                    include: {
+                        model: User,
+                        attributes: [ 'username' ]
+                    }
+                },
+                {
+                    model: Post,
+                    attributes: [ 'title' ],
+                    through: Vote,
+                    as: 'voted_posts'
                 }
-            },
-            {
-                model: Post,
-                attributes: [ 'title' ],
-                through: Vote,
-                as: 'voted_posts'
-            }
-        ]
-    } )
+            ]
+        } )
         .then( userData => {
             if ( !userData ) {
                 res.status( 404 ).json( { message: 'No User Found' } );
@@ -49,20 +49,18 @@ router.get( '/:id', ( req, res ) => {
             }
             res.json( userData );
         } )
-        .catch( err => {
-            console.log( err );
-            res.status( 500 ).json( err );
-        } );
+        .catch( err => catchErrors( err, res ) );
 } );
 
 // POST /api/users
 router.post( '/', ( req, res ) => {
     const { username, email, password } = req.body;
-    User.create( {
-        username,
-        email,
-        password
-    } )
+    User
+        .create( {
+            username,
+            email,
+            password
+        } )
         .then( newUser => {
             req.session.save( () => {
                 req.session.user_id = newUser.id;
@@ -72,10 +70,7 @@ router.post( '/', ( req, res ) => {
                 res.status( 204 ).json( { user: newUser, message: 'You are logged in!' } );
             } );
         } )
-        .catch( err => {
-            console.log( err );
-            res.status( 500 ).json( err );
-        } );
+        .catch( err => catchErrors( err, res ) );
 
 } );
 
@@ -127,12 +122,13 @@ router.post( '/logout', ( req, res ) => {
 
 // PUT /api/users/1
 router.put( '/:id', ( req, res ) => {
-    User.update( req.body, {
-        individualHooks: true,
-        where: {
-            id: req.params.id
-        }
-    } )
+    User
+        .update( req.body, {
+            individualHooks: true,
+            where: {
+                id: req.params.id
+            }
+        } )
         .then( userData => {
             // validate user exists
             if ( !userData ) {
@@ -141,29 +137,26 @@ router.put( '/:id', ( req, res ) => {
             }
             res.json( userData );
         } )
-        .catch( err => {
-            console.log( err );
-            res.status( 500 ).json( err );
-        } );
+        .catch( err => catchErrors( err, res ) );
 
 } );
 
 // DELETE /api/users/1
 router.delete( '/:id', ( req, res ) => {
-    User.destroy( {
-        where: {
-            id: req.params.id
-        }
-    } ).then( userData => {
-        if ( !userData ) {
-            res.status( 404 ).json( { message: 'No User Found' } );
-            return;
-        }
-        res.status( 200 ).json( userData );
-    } ).catch( err => {
-        console.log( err );
-        res.status( 500 ).json( err );
-    } );
+    User
+        .destroy( {
+            where: {
+                id: req.params.id
+            }
+        } )
+        .then( userData => {
+            if ( !userData ) {
+                res.status( 404 ).json( { message: 'No User Found' } );
+                return;
+            }
+            res.status( 200 ).json( userData );
+        } )
+        .catch( err => catchErrors( err, res ) );
 } );
 
 module.exports = router;

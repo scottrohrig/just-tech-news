@@ -1,6 +1,7 @@
 const router = require( 'express' ).Router();
 const sequelize = require( '../../config/connection' );
 const { User, Post, Vote, Comment } = require( '../../models' );
+const { catchErrors } = require( '../../utils/helpers' )
 
 // get all users' posts
 router.get( '/', ( req, res ) => {
@@ -26,10 +27,7 @@ router.get( '/', ( req, res ) => {
         ]
     } )
         .then( dbPostData => res.json( dbPostData ) )
-        .catch( err => {
-            console.log( err );
-            res.status( 500 ).json( err );
-        } );
+        .catch( err => catchErrors(err, res) );
 } );
 
 // get a single post
@@ -63,10 +61,7 @@ router.get( '/:id', ( req, res ) => {
             }
             res.json( dbPostData );
         } )
-        .catch( err => {
-            console.log( err );
-            res.status( 500 ).json( err );
-        } );
+        .catch( err => catchErrors(err, res) );
 } );
 
 // create a Post
@@ -78,45 +73,51 @@ router.post( '/', ( req, res ) => {
         user_id: req.body.user_id
     } )
         .then( dbPostData => res.json( dbPostData ) )
-        .catch( err => {
-            console.log( err );
-            res.status( 500 ).json( err );
-        } );
+        .catch( err => catchErrors(err, res) );
 } );
 
 router.put( '/upvote', ( req, res ) => {
-    Post.upvote( req.body, { Vote } )
-        .then( updatedPostData => res.json( updatedPostData ) )
-        .catch( err => {
-            console.log( err );
-            res.status( 400 ).json( err );
-        } );
+    // validate session
+    if ( req.session ) {
+        // pass destructured data
+        Post
+            .upvote(
+                { ...req.body, user_id: req.session.user_id },
+                { Vote, Comment, User }
+            )
+            .then( updatedPostData => res.json( updatedPostData ) )
+            .catch( err => catchErrors(err, res) );
+        }
 } );
 
 // update a post's 'title'
 router.put( '/:id', ( req, res ) => {
-    Post.update(
-        {
-            title: req.body.title
-        },
-        {
-            where: { id: req.params.id }
-        }
-    ).then( dbPostData => {
-        // validate post found
-        if ( !dbPostData ) {
-            res.status( 404 ).json( { message: 'No Post Found' } );
-            return;
-        }
-        res.json( dbPostData );
-    } ).catch( err => { console.log( err ); res.status( 500 ).json( err ); } );
+    Post
+        .update(
+            {
+                title: req.body.title
+            },
+            {
+                where: { id: req.params.id }
+            }
+        )
+        .then( dbPostData => {
+            // validate post found
+            if ( !dbPostData ) {
+                res.status( 404 ).json( { message: 'No Post Found' } );
+                return;
+            }
+            res.json( dbPostData );
+        } )
+        .catch( err => catchErrors(err, res) );
 } );
 
 // delete a post
 router.delete( '/:id', ( req, res ) => {
-    Post.destroy( {
-        where: { id: req.params.id }
-    } )
+    Post
+        .destroy( {
+            where: { id: req.params.id }
+        } )
         .then( dbPostData => {
             // validate post found
             if ( !dbPostData ) {
@@ -125,11 +126,7 @@ router.delete( '/:id', ( req, res ) => {
             }
             res.status( 200 ).json( dbPostData );
         } )
-        .catch( err => {
-            console.log( err );
-            res.status( 500 ).json( err );
-        } );
+        .catch( err => catchErrors(err, res) );
 } );
 
 module.exports = router;
-
